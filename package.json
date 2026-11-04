@@ -1,0 +1,27 @@
+{
+  "name": "node-react-starter",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "backend",
+    "frontend"
+  ],
+  "scripts": {
+    "docker":   "docker compose up",
+    "backend":  "npm run dev --workspace backend",
+    "frontend": "npm run dev --workspace frontend",
+
+    "dev": "concurrently -n DOCKER,API,WEB -c yellow,blue,green \"npm run docker\" \"npm run backend\" \"npm run frontend\"",
+
+    "build": "npm run build --workspace frontend",
+    "start": "npm run start --workspace backend"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1"
+  },
+  "dependencies": {
+    "dotenv": "^18.0.7",
+    "react-router-dom": "^7.18.4",
+    "vite": "^8.3.4"
+  }
+}
