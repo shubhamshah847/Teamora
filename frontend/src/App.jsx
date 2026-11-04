@@ -7,7 +7,7 @@ import { io } from 'socket.io-client'
 import './App.css'
 // App.jsx
 
-export const SERVER_URI = "http://localhost:3001";
+export const SERVER_URI = "https://teamora-aq9u.onrender.com";
 
 const featureCards = [
   {
