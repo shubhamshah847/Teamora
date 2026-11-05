@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { AiTwotoneDelete } from "react-icons/ai";
 import axios from 'axios'
 import { SERVER_URI } from '../App.jsx';
-const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || window.location.origin
+const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || SERVER_URI
 
 // Merge two message lists, remove duplicates by _id, keep oldest -> newest
 const mergeMessages = (a = [], b = []) => {

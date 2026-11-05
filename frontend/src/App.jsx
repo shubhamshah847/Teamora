@@ -34,7 +34,7 @@ const stats = [
 const steps = ['Create a workspace', 'Invite your team', 'Launch your roadmap']
 
 const getStoredToken = () => localStorage.getItem('Teamora-token')
-const socketUrl = import.meta.env.VITE_SOCKET_URL || window.location.origin
+const socketUrl = import.meta.env.VITE_SOCKET_URL || SERVER_URI
 let accessToken = getStoredToken()
 let refreshRequest = null;
 
