@@ -36,87 +36,125 @@ const steps = ['Create a workspace', 'Invite your team', 'Launch your roadmap']
 const getStoredToken = () => localStorage.getItem('Teamora-token')
 const socketUrl = import.meta.env.VITE_SOCKET_URL || window.location.origin
 let accessToken = getStoredToken()
-let refreshRequest = null
+let refreshRequest = null;
 
 export const storeAccessToken = (token) => {
-  accessToken = token || null
+  accessToken = token || null;
+
   if (accessToken) {
-    localStorage.setItem('Teamora-token', accessToken)
+    localStorage.setItem("Teamora-token", accessToken);
   } else {
-    localStorage.removeItem('Teamora-token')
+    localStorage.removeItem("Teamora-token");
   }
-}
+};
 
 const getStoredUser = () => {
   try {
-    const user = localStorage.getItem('Teamora-user')
-    return user ? JSON.parse(user) : null
+    const user = localStorage.getItem("Teamora-user");
+    return user ? JSON.parse(user) : null;
   } catch {
-    return null
+    return null;
   }
-}
+};
 
 async function apiRequest(url, options = {}) {
-  const { headers: optionHeaders, ...fetchOptions } = options
+  const { headers: optionHeaders, ...fetchOptions } = options;
 
-  const sendRequest = (token) => fetch(url, {
-    ...fetchOptions,
-    credentials: 'include',
-    headers: {
-      'Content-Type': 'application/json',
-      ...(optionHeaders || {}),
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    },
-  })
+  const sendRequest = (token) =>
+    fetch(`${SERVER_URI}${url}`, {
+      ...fetchOptions,
+      credentials: "include",
+      headers: {
+        "Content-Type": "application/json",
+        ...(optionHeaders || {}),
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+    });
 
   const readResponse = async (response) => {
-    const contentType = response.headers.get('content-type') || ''
-    const data = contentType.includes('application/json') ? await response.json() : {}
-    return { data, response }
-  }
+    const contentType = response.headers.get("content-type") || "";
 
-  let { data, response } = await readResponse(await sendRequest(accessToken))
+    const data = contentType.includes("application/json")
+      ? await response.json()
+      : {};
 
-  if (response.status === 401 && url !== '/auth/refresh-access-token') {
+    return { data, response };
+  };
+
+  // 1. Send the original API request
+  let { data, response } = await readResponse(
+    await sendRequest(accessToken)
+  );
+
+  // 2. Refresh the access token if the request returns 401
+  if (
+    response.status === 401 &&
+    url !== "/auth/refresh-access-token"
+  ) {
     if (!refreshRequest) {
-      refreshRequest = fetch('/auth/refresh-access-token', {
-        method: 'POST',
-        credentials: 'include',
-      })
+      refreshRequest = fetch(
+        `${SERVER_URI}/auth/refresh-access-token`,
+        {
+          method: "POST",
+          credentials: "include",
+        }
+      )
         .then(async (refreshResponse) => {
-          const contentType = refreshResponse.headers.get('content-type') || ''
-          const refreshData = contentType.includes('application/json') ? await refreshResponse.json() : {}
+          const contentType =
+            refreshResponse.headers.get("content-type") || "";
+
+          const refreshData = contentType.includes("application/json")
+            ? await refreshResponse.json()
+            : {};
+
           if (!refreshResponse.ok || !refreshData.accessToken) {
-            const error = new Error(refreshData.message || 'Session expired. Please sign in again.')
-            error.statusCode = refreshResponse.status
-            throw error
+            const error = new Error(
+              refreshData.message ||
+                "Session expired. Please sign in again."
+            );
+
+            error.statusCode = refreshResponse.status;
+            throw error;
           }
-          storeAccessToken(refreshData.accessToken)
-          return refreshData.accessToken
+
+          storeAccessToken(refreshData.accessToken);
+
+          return refreshData.accessToken;
         })
         .catch((error) => {
-          storeAccessToken(null)
-          window.dispatchEvent(new Event('Teamora:auth-expired'))
-          throw error
+          storeAccessToken(null);
+
+          window.dispatchEvent(
+            new Event("Teamora:auth-expired")
+          );
+
+          throw error;
         })
         .finally(() => {
-          refreshRequest = null
-        })
+          refreshRequest = null;
+        });
     }
 
-    const refreshedToken = await refreshRequest
-      ; ({ data, response } = await readResponse(await sendRequest(refreshedToken)))
+    // 3. Retry the original request with the new token
+    const refreshedToken = await refreshRequest;
+
+    ({ data, response } = await readResponse(
+      await sendRequest(refreshedToken)
+    ));
   }
 
+  // 4. Handle errors
   if (!response.ok) {
-    const error = new Error(data.message || 'Request failed')
-    error.statusCode = response.status
-    throw error
+    const error = new Error(
+      data.message || "Request failed"
+    );
+
+    error.statusCode = response.status;
+    throw error;
   }
 
-  return data
+  return data;
 }
-
 function App() {
   const [token, setToken] = useState(getStoredToken())
   const [user, setUser] = useState(getStoredUser())
