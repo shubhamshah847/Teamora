@@ -16,7 +16,7 @@ const app = express()
 
 
 app.use(cors({
-  origin: "http://localhost:5173",
+  origin: "https://teamora-web.vercel.app",
   credentials: true,
   methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
   allowedHeaders: ["Content-Type", "Authorization"]
@@ -26,6 +26,22 @@ connectToDb()
 
 
 export const redis = new Redis(process.env.REDIS_URI)
+redis.on("connect", () => console.log("Redis connected"));
+
+redis.on("ready", () => console.log("Redis ready"));
+
+redis.on("error", (err) => console.log("Redis error:", err.message));
+
+redis.on("close", () => console.log("Redis connection closed"));
+
+redis.ping()
+  .then((result) => {
+    console.log("Redis PING:", result);
+  })
+  .catch((err) => {
+    console.error("Redis PING failed:", err.message);
+  });
+
 
 app.use(cookieParser())
 app.use(express.json())

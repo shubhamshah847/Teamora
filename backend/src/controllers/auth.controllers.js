@@ -44,8 +44,6 @@ export const registerController = async (req, res) => {
             "EX",
             1000
         )
-        console.log("redis - set ", redisOtp)
-        console.log("redis-otp:",redisOtp)
         const sent = await sendOtp(normalizedEmail, name.trim(), otp);
         if (!sent) {
             await redis.del(`otp:${normalizedEmail}`)
