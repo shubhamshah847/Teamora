@@ -159,11 +159,10 @@ export default function TeamChat({ token, user }) {
 
 
 
-  // apiRequest is defined here, at the top level of the component.
-  // Relative paths like '/teams' are caught by the Vite proxy.
+  // Keep chat requests on the deployed backend in production.
   const apiRequest = useCallback(
     async (path, options = {}) => {
-      const res = await fetch(path, {
+      const res = await fetch(`${SERVER_URI}${path}`, {
         ...options,
         headers: {
           'Content-Type': 'application/json',
