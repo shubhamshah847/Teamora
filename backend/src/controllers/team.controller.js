@@ -185,7 +185,7 @@ export const addMember = async (req, res) => {
 		const inviter = await userModel.findById(req.user).select("name");
 
 
-		const inviteBaseUrl = process.env.INVITE_APP_URL || "https://shubhamsah.com.np";
+		const inviteBaseUrl = process.env.INVITE_APP_URL || "https://teamora-web.vercel.app";
 		const acceptUrl = `${inviteBaseUrl.replace(/\/+$/, "")}/?invite=${encodeURIComponent(invitationToken)}`;
 		const emailSent = await sendTeamWelcomeEmail(
 			normalizedEmail,
