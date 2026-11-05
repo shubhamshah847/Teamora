@@ -609,9 +609,7 @@ const ChatSummaryModal = ({ summary, onClose }) => {
               }} className="group relative inline-flex items-center justify-center overflow-hidden rounded-lg border border-blue-200 bg-white px-6 py-2.5 font-semibold text-blue-600 shadow-sm transition-all duration-300 hover:shadow-lg hover:shadow-blue-500/30 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 active:scale-95">
                 <span className="absolute inset-0 h-full w-full scale-0 rounded-lg bg-blue-600 opacity-0 transition-all duration-300 ease-out group-hover:scale-100 group-hover:opacity-100"></span>
                 <span className="relative flex items-center gap-2 transition-colors duration-300 group-hover:text-white">
-                  <svg className="h-5 w-5 transition-transform duration-300 group-hover:-translate-y-0.5 group-hover:scale-110" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
-                  </svg>
+                  <GiMonoWheelRobot size="28" color="red" />
                   Summarize
                 </span>
               </button>
