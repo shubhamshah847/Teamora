@@ -239,7 +239,7 @@ function App() {
           ? { email: form.email, password: form.password }
           : { name: form.name, email: form.email, password: form.password }
 
-      const response = await fetch(`/auth${endpoint}`, {
+      const response = await fetch(`${SERVER_URI}/auth${endpoint}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
@@ -286,7 +286,7 @@ function App() {
 
     try {
       setStatus({ type: 'info', message: 'Verifying your account...' })
-      const response = await fetch('/auth/verify-otp', {
+      const response = await fetch(`${SERVER_URI}/auth/verify-otp`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
@@ -319,7 +319,7 @@ function App() {
     if (!pendingVerification) return
 
     try {
-      const response = await fetch('/auth/generate-new-otp', {
+      const response = await fetch(`${SERVER_URI}/auth/generate-new-otp`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
