@@ -11,7 +11,6 @@ A JavaScript full-stack starter with an Express API and a React app powered by V
 
 1. From the project root, install dependencies with `npm install`.
 2. Start both the API and frontend with `npm run dev`.
-3. Open the frontend at `https://teamora-web.vercel.app`. The API listens on `https://teamora-aq9u.onrender.com` and is available to the frontend through Vite's `/api` proxy.
 
 The sample health endpoint is `GET /api/health`.
 
