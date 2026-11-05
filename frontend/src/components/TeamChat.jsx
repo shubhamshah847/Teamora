@@ -460,6 +460,7 @@ const ChatSummaryModal = ({ summary, onClose }) => {
           <span className="eyebrow">Workspace conversations</span>
           <h2>Team chat</h2>
           <p className="page-subtitle">One shared space to keep every team in sync.</p>
+          <p className="page-subtitle">Have a long conversation? Let Teamora AI summarize your messages in just 30 seconds!</p>
         </div>
         <div className="chat-heading-badge">
           <span className="chat-heading-dot" /> {teams.length} {teams.length === 1 ? 'team' : 'teams'}
