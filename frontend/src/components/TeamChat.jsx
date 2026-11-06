@@ -187,6 +187,7 @@ export default function TeamChat({ token, user }) {
   const handleChatSummarize = async (teamId) => {
     const response = await axios.post(`${SERVER_URI}/chat/chat/message-summarize/${teamId}`,    {},  {
         headers: {
+          
           Authorization: `Bearer ${token}`,
         },
         withCredentials: true
@@ -196,22 +197,16 @@ export default function TeamChat({ token, user }) {
     console.log(response)
   }
   const handleDeleteMessage = async (teamId) => {
-    if (messages.length === 0) return console.log("no messages")
+    if (messages.length === 0) return
     try {
-
-      // axios.post(url, data, config)
-
-
-      const deleteMessageRequest = await axios.delete(`${SERVER_URI}/chat/teams/${teamId}/delete-chat`,{},
-        {
+      await axios.delete(`${SERVER_URI}/chat/teams/${teamId}/delete-chat`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
         withCredentials: true
-      }
-      )
+      })
       handleDelete();
-      refreshMessages()
+      await refreshMessages()
     }
     catch (err) {
       setError(err.response?.data?.message || 'Unable to delete chat history')
@@ -544,7 +539,7 @@ const ChatSummaryModal = ({ summary, onClose }) => {
                         type="button"
                         className="delete-chat-btn"
                         onClick={(e) => {
-                          e.stopPropagation();
+                         // e.stopPropagation();
                           handleDeleteMessage(team._id);
                         }}
                         title="Delete chat"
@@ -606,7 +601,7 @@ const ChatSummaryModal = ({ summary, onClose }) => {
 
               <button onClick={()=>{
                 handleChatSummarize(selectedTeam._id)
-              }} className="group relative inline-flex items-center justify-center overflow-hidden rounded-lg border border-blue-200 bg-white px-6 py-2.5 font-semibold text-blue-600 shadow-sm transition-all duration-300 hover:shadow-lg hover:shadow-blue-500/30 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 active:scale-95">
+              }} className="chat-summary-button group relative inline-flex items-center justify-center overflow-hidden rounded-lg border border-blue-200 bg-white px-6 py-2.5 font-semibold text-blue-600 shadow-sm transition-all duration-300 hover:shadow-lg hover:shadow-blue-500/30 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 active:scale-95">
                 <span className="absolute inset-0 h-full w-full scale-0 rounded-lg bg-blue-600 opacity-0 transition-all duration-300 ease-out group-hover:scale-100 group-hover:opacity-100"></span>
                 <span className="relative flex items-center gap-2 transition-colors duration-300 group-hover:text-white">
                   <span aria-hidden="true">✦</span>

@@ -817,6 +817,7 @@
   inset: 0;
   display: grid;
   place-items: center;
+  overflow-y: auto;
   padding: 20px;
   background: rgba(10, 10, 10, 0.55);
   backdrop-filter: blur(5px);
@@ -825,6 +826,8 @@
 .team-modal {
   position: relative;
   width: min(100%, 480px);
+  max-height: calc(100dvh - 40px);
+  overflow-y: auto;
   padding: 30px;
   border: 1px solid rgba(255, 255, 255, 0.7);
   border-radius: 24px;
@@ -2499,6 +2502,10 @@
   background: linear-gradient(105deg, #fff 0%, #f8f6ff 100%);
 }
 
+.chat-summary-button {
+  flex: 0 0 auto;
+}
+
 .chat-conversation-identity {
   display: flex;
   min-width: 0;
@@ -2870,8 +2877,14 @@
 }
 
 @media (max-width: 620px) {
+  .chat-page {
+    min-width: 0;
+  }
+
   .chat-page-heading {
     align-items: flex-start;
+    flex-wrap: wrap;
+    gap: 12px;
   }
 
   .chat-heading-badge {
@@ -2880,21 +2893,23 @@
   }
 
   .team-chat-layout {
-    height: min(820px, calc(100dvh - 230px));
-    min-height: 540px;
+    width: 100%;
+    height: min(760px, calc(100dvh - 205px));
+    min-height: 0;
+    max-height: calc(100dvh - 205px);
     grid-template-columns: minmax(0, 1fr);
     grid-template-rows: auto minmax(0, 1fr);
   }
 
   .chat-team-sidebar {
-    max-height: 240px;
+    max-height: 205px;
     min-height: 0;
     border-right: 0;
     border-bottom: 1px solid #ededed;
   }
 
   .chat-team-list {
-    max-height: 125px;
+    max-height: 90px;
   }
 
   .chat-sidebar-note {
@@ -2907,6 +2922,25 @@
 
   .chat-conversation {
     min-height: 0;
+  }
+
+  .chat-conversation-header {
+    flex-wrap: wrap;
+    padding: 12px;
+  }
+
+  .chat-conversation-identity {
+    min-width: 0;
+    flex: 1 1 calc(100% - 50px);
+  }
+
+  .chat-summary-button {
+    order: 3;
+    width: 100%;
+    min-height: 36px;
+    padding: 0 12px !important;
+    border-radius: 10px !important;
+    font-size: 0.72rem !important;
   }
 
   .chat-message-area {
