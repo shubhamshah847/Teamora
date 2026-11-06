@@ -49,13 +49,13 @@ function useTeamChat({ token, teams, selectedTeamId, user, apiRequest }) {
     }))
   }, [])
 
-  const refreshMessages = useCallback(async () => {
-    if (!selectedTeamId) return
+  const refreshMessages = useCallback(async (teamId = selectedTeamId) => {
+    if (!teamId) return
     try {
-      const data = await apiRequest(`/chat/teams/${selectedTeamId}/messages?limit=30`)
+      const data = await apiRequest(`/chat/teams/${teamId}/messages?limit=30`)
       setMessagesByTeam((current) => ({
         ...current,
-        [selectedTeamId]: mergeMessages(data.messages, current[selectedTeamId]),
+        [teamId]: data.messages || [],
       }))
       setError('')
     } catch (requestError) {
@@ -197,7 +197,6 @@ export default function TeamChat({ token, user }) {
     console.log(response)
   }
   const handleDeleteMessage = async (teamId) => {
-    if (messages.length === 0) return
     try {
       await axios.delete(`${SERVER_URI}/chat/teams/${teamId}/delete-chat`, {
         headers: {
@@ -206,7 +205,7 @@ export default function TeamChat({ token, user }) {
         withCredentials: true
       })
       handleDelete();
-      await refreshMessages()
+      await refreshMessages(teamId)
     }
     catch (err) {
       setError(err.response?.data?.message || 'Unable to delete chat history')
