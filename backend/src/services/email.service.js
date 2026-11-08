@@ -9,7 +9,7 @@ const senderEmail = process.env.RESEND_SENDER_EMAIL
 // Optional: reply-to address (helps trust/deliverability). Falls back to sender.
 const replyToEmail = process.env.RESEND_REPLY_TO || senderEmail;
 // Optional: if set, a "Open Teamora" button is shown in emails.
-const appUrl = process.env.APP_URL || process.env.CLIENT_URL || "https://teamora-web.vercel.app/";
+const appUrl = process.env.APP_URL || process.env.CLIENT_URL || "https://localhost:5173/";
 const resend = resendApiKey ? new Resend(resendApiKey) : null;
 
 const escapeHtml = (value = "") => String(value).replace(/[&<>"']/g, (character) => ({

@@ -85,7 +85,7 @@ export const loginController = async (req, res) => {
             return res.status(400).json({ message: "Email or password wrong" });
         }
 
-        const refreshToken = jwt.sign({ id: isExist._id }, process.env.JWT_WEB_TOKEN, { expiresIn: '15d' });
+        const refreshToken = jwt.sign({ id: isExist._id }, process.env.JWT_WEB_TOKEN, { expiresIn: '7d' });
         const accessToken = jwt.sign({ id: isExist._id }, process.env.JWT_WEB_TOKEN, { expiresIn: '15m' });
 
         res.cookie('token', refreshToken, {
@@ -312,7 +312,7 @@ export const userLogout = async (req, res) => {
     }
 };
 export const refreshAccessToken = async (req, res) => {
-    console.log("hey how are you ")
+    console.log("refreshAcessToken hit ")
     const refreshToken = req.cookies?.token;
     if (!refreshToken) return res.status(401).json({ message: "Refresh token is missing. Please log in again." });
 
@@ -324,12 +324,13 @@ export const refreshAccessToken = async (req, res) => {
             res.clearCookie("token", { httpOnly: true, secure: false, sameSite: "lax" });
             return res.status(401).json({ message: "Refresh token is no longer valid. Please log in again." });
         }
+        const baseConfig= {httpOnly:true , secure:true,sameSite:"lax"}
 
         const accessToken = jwt.sign({ id: user._id }, process.env.JWT_WEB_TOKEN, { expiresIn: "15m" });
-        console.log(accessToken)
+        console.log("new access token",accessToken)
         const newRefreshToken = jwt.sign({ id: user._id }, process.env.JWT_WEB_TOKEN, { expiresIn: "15d" });
-        console.log(newRefreshToken)
-        res.clearCookie("token", { httpOnly: true, secure: false, sameSite: "lax" });
+        console.log("new refresh token",newRefreshToken)
+        res.clearCookie("token", { ...baseConfig });
         res.cookie("token", newRefreshToken, {
             httpOnly: true,
             secure: false,

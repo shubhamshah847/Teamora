@@ -1,13 +1,19 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import {useEffect, useMemo, useRef, useState } from 'react'
 import { BrowserRouter, NavLink, Navigate, Route, Routes, useNavigate } from 'react-router-dom'
 import FeedbackToast from './components/FeedbackToast.jsx'
 import TeamChat from './components/TeamChat.jsx'
+
 import TeamoraLogo, { TeamoraMark } from './components/TeamoraLogo.jsx'
 import { io } from 'socket.io-client'
+import {  AuthModal, AuthProvider, SERVER_URI, useAuth } from './auth/auth.jsx'
+import api from './auth/axios.js'
+import { initializeAuth } from './auth/axios.js'
 import './App.css'
 // App.jsx
 
-export const SERVER_URI = "https://teamora-aq9u.onrender.com"
+
+
+
 
 const featureCards = [
   {
@@ -33,341 +39,30 @@ const stats = [
 
 const steps = ['Create a workspace', 'Invite your team', 'Launch your roadmap']
 
-const getStoredToken = () => localStorage.getItem('Teamora-token')
 const socketUrl = import.meta.env.VITE_SOCKET_URL || SERVER_URI
-let accessToken = getStoredToken()
-let refreshRequest = null;
 
-export const storeAccessToken = (token) => {
-  accessToken = token || null;
-
-  if (accessToken) {
-    localStorage.setItem("Teamora-token", accessToken);
-  } else {
-    localStorage.removeItem("Teamora-token");
-  }
-};
-
-const getStoredUser = () => {
-  try {
-    const user = localStorage.getItem("Teamora-user");
-    return user ? JSON.parse(user) : null;
-  } catch {
-    return null;
-  }
-};
-
-async function apiRequest(url, options = {}) {
-  const { headers: optionHeaders, ...fetchOptions } = options;
-
-  const sendRequest = (token) =>
-    fetch(`${SERVER_URI}${url}`, {
-      ...fetchOptions,
-      credentials: "include",
-      headers: {
-        "Content-Type": "application/json",
-        ...(optionHeaders || {}),
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      },
-    });
-
-  const readResponse = async (response) => {
-    const contentType = response.headers.get("content-type") || "";
-
-    const data = contentType.includes("application/json")
-      ? await response.json()
-      : {};
-
-    return { data, response };
-  };
-
-  // 1. Send the original API request
-  let { data, response } = await readResponse(
-    await sendRequest(accessToken)
-  );
-
-  // 2. Refresh the access token if the request returns 401
-  if (
-    response.status === 401 &&
-    url !== "/auth/refresh-access-token"
-  ) {
-    if (!refreshRequest) {
-      refreshRequest = fetch(
-        `${SERVER_URI}/auth/refresh-access-token`,
-        {
-          method: "POST",
-          credentials: "include",
-        }
-      )
-        .then(async (refreshResponse) => {
-          const contentType =
-            refreshResponse.headers.get("content-type") || "";
-
-          const refreshData = contentType.includes("application/json")
-            ? await refreshResponse.json()
-            : {};
-
-          if (!refreshResponse.ok || !refreshData.accessToken) {
-            const error = new Error(
-              refreshData.message ||
-                "Session expired. Please sign in again."
-            );
-
-            error.statusCode = refreshResponse.status;
-            throw error;
-          }
-
-          storeAccessToken(refreshData.accessToken);
-
-          return refreshData.accessToken;
-        })
-        .catch((error) => {
-          storeAccessToken(null);
-
-          window.dispatchEvent(
-            new Event("Teamora:auth-expired")
-          );
-
-          throw error;
-        })
-        .finally(() => {
-          refreshRequest = null;
-        });
-    }
-
-    // 3. Retry the original request with the new token
-    const refreshedToken = await refreshRequest;
-
-    ({ data, response } = await readResponse(
-      await sendRequest(refreshedToken)
-    ));
-  }
-
-  // 4. Handle errors
-  if (!response.ok) {
-    const error = new Error(
-      data.message || "Request failed"
-    );
-
-    error.statusCode = response.status;
-    throw error;
-  }
-
-  return data;
-}
 function App() {
-  const [token, setToken] = useState(getStoredToken())
-  const [user, setUser] = useState(getStoredUser())
-  const inviteTokenRef = useRef(new URLSearchParams(window.location.search).get('invite'))
-  const inviteAttemptedRef = useRef(false)
-  const [mode, setMode] = useState('login')
-  const [form, setForm] = useState({ name: '', email: '', password: '' })
-  const [otpCode, setOtpCode] = useState('')
-  const [pendingVerification, setPendingVerification] = useState(null)
-  const [status, setStatus] = useState(() => inviteTokenRef.current
-    ? { type: 'info', message: 'You have a team invitation. Sign in or create an account with the invited email to accept it.' }
-    : { type: '', message: '' })
-
-  useEffect(() => {
-    if (token) {
-      storeAccessToken(token)
-    } else {
-      storeAccessToken(null)
-    }
-  }, [token])
-
-  useEffect(() => {
-    if (user) {
-      localStorage.setItem('Teamora-user', JSON.stringify(user))
-    } else {
-      localStorage.removeItem('Teamora-user')
-    }
-  }, [user])
-
-  useEffect(() => {
-    const handleAuthExpired = () => {
-      setToken(null)
-      setUser(null)
-      setStatus({ type: 'error', message: 'Your session expired. Please sign in again.' })
-    }
-
-    window.addEventListener('Teamora:auth-expired', handleAuthExpired)
-    return () => window.removeEventListener('Teamora:auth-expired', handleAuthExpired)
-  }, [])
-
-  useEffect(() => {
-    if (!token || !inviteTokenRef.current || inviteAttemptedRef.current) return
-    inviteAttemptedRef.current = true
-    apiRequest('/teams/invitations/accept', {
-      method: 'POST',
-      body: JSON.stringify({ token: inviteTokenRef.current }),
-    })
-      .then(() => {
-        inviteTokenRef.current = null
-        const cleanUrl = new URL(window.location.href)
-        cleanUrl.searchParams.delete('invite')
-        window.history.replaceState({}, '', `${cleanUrl.pathname}${cleanUrl.search}${cleanUrl.hash}`)
-        window.location.href = '/dashboard'
-      })
-      .catch((error) => {
-        inviteAttemptedRef.current = false
-        setStatus({ type: 'error', message: error.message || 'Unable to accept the team invitation.' })
-        if (error.statusCode === 403) {
-          storeAccessToken(null)
-          setToken(null)
-          setUser(null)
-          setMode('login')
-          setPendingVerification(null)
-          setForm((current) => ({ ...current, password: '' }))
-        }
-      })
-  }, [token])
-
-  const handleChange = (event) => {
-    const { name, value } = event.target
-    setForm((current) => ({ ...current, [name]: value }))
-  }
-
-  const handleSubmit = async (event) => {
-    event.preventDefault()
-    setStatus({ type: 'info', message: 'creating.....' })
-
-    try {
-      const endpoint = mode === 'login' ? '/user/login' : '/user/register'
-      const payload =
-        mode === 'login'
-          ? { email: form.email, password: form.password }
-          : { name: form.name, email: form.email, password: form.password }
-
-      const response = await fetch(`${SERVER_URI}/auth${endpoint}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify(payload),
-      })
-
-      const data = await response.json().catch(() => ({}))
-      if (!response.ok) throw new Error(data.message || 'Something went wrong')
-
-      if (mode === 'login') {
-        const nextToken = data.accessToken || getStoredToken()
-        const nextUser = data.user || { name: 'Team member', email: form.email }
-        if (nextToken) storeAccessToken(nextToken)
-        localStorage.setItem('Teamora-user', JSON.stringify(nextUser))
-        setToken(nextToken)
-        setUser(nextUser)
-        if (inviteTokenRef.current) {
-          setStatus({ type: 'info', message: 'Accepting your team invitation...' })
-          return
-        }
-        setStatus({ type: 'success', message: data.message || 'Welcome back to Teamora' })
-        window.location.href = '/dashboard'
-      } else {
-        setPendingVerification(data.pendingVerification)
-        setStatus({
-          type: 'success',
-          message: data.message || 'Verify your email to finish creating your account.',
-        })
-        setMode('otp')
-        setForm({ name: '', email: '', password: '' })
-        setOtpCode('')
-      }
-    } catch (error) {
-      setStatus({ type: 'error', message: error.message || 'something went wrong' })
-    }
-  }
-
-  const handleVerifyOtp = async (event) => {
-    event.preventDefault()
-    if (!pendingVerification || !otpCode) {
-      setStatus({ type: 'error', message: 'Please enter the OTP sent to your email.' })
-      return
-    }
-
-    try {
-      setStatus({ type: 'info', message: 'Verifying your account...' })
-      const response = await fetch(`${SERVER_URI}/auth/verify-otp`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ email: pendingVerification.email, otp: otpCode }),
-      })
-
-      const data = await response.json().catch(() => ({}))
-      if (!response.ok) throw new Error(data.message || 'OTP verification failed')
-
-      const nextToken = data.accessToken || getStoredToken()
-      const nextUser = data.user || { name: pendingVerification.name, email: pendingVerification.email }
-      if (nextToken) storeAccessToken(nextToken)
-      localStorage.setItem('Teamora-user', JSON.stringify(nextUser))
-      setToken(nextToken)
-      setUser(nextUser)
-      setPendingVerification(null)
-      setOtpCode('')
-      if (inviteTokenRef.current) {
-        setStatus({ type: 'info', message: 'Accepting your team invitation...' })
-        return
-      }
-      setStatus({ type: 'success', message: data.message || 'OTP verified. Welcome to Teamora.' })
-      window.location.href = '/dashboard'
-    } catch (error) {
-      setStatus({ type: 'error', message: error.message || 'Unable to verify OTP' })
-    }
-  }
-
-  const handleResendOtp = async () => {
-    if (!pendingVerification) return
-
-    try {
-      const response = await fetch(`${SERVER_URI}/auth/generate-new-otp`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ email: pendingVerification.email }),
-      })
-
-      const data = await response.json().catch(() => ({}))
-      if (!response.ok) throw new Error(data.message || 'Unable to resend OTP')
-      setStatus({ type: 'success', message: data.message || 'A fresh OTP has been sent.' })
-    } catch (error) {
-      setStatus({ type: 'error', message: error.message || 'Unable to resend OTP' })
-    }
-  }
-
-  const logout = async () => {
-    try {
-      await apiRequest('/auth/logout')
-    } catch {
-      // Clear the local session even if the server-side logout request fails.
-    } finally {
-      storeAccessToken(null)
-      setToken(null)
-      setUser(null)
-      setStatus({ type: 'success', message: 'Signed out successfully.' })
-    }
-  }
-
   return (
     <BrowserRouter>
-      <Routes>
+      <AuthProvider>
+        <AppRoutes />
+      </AuthProvider>
+    </BrowserRouter>
+  )
+}
+
+function AppRoutes() {
+  const auth = useAuth()
+  const { token, user, setUser, logout, authLoading } = auth
+
+  if (authLoading) return <div className="Teamora-shell" aria-busy="true" />
+
+  return (
+    <Routes>
         <Route
           path="/"
           element={
-            <LandingPage
-              token={token}
-              mode={mode}
-              setMode={setMode}
-              form={form}
-              otpCode={otpCode}
-              setOtpCode={setOtpCode}
-              pendingVerification={pendingVerification}
-              handleChange={handleChange}
-              handleSubmit={handleSubmit}
-              handleVerifyOtp={handleVerifyOtp}
-              handleResendOtp={handleResendOtp}
-              status={status}
-              user={user}
-            />
+            <LandingPage token={token} user={user} />
           }
         />
         <Route
@@ -375,13 +70,13 @@ function App() {
           element={token ? <DashboardApp user={user} token={token} onLogout={logout} onUserUpdate={setUser} /> : <Navigate to="/" replace />}
         />
         <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
-    </BrowserRouter>
+    </Routes>
   )
 }
 
-function LandingPage({ token, mode, setMode, form, otpCode, setOtpCode, pendingVerification, handleChange, handleSubmit, handleVerifyOtp, handleResendOtp, status, user }) {
+function LandingPage({ token, user }) {
   const navigate = useNavigate()
+  const { mode, setMode } = useAuth()
   const [authOpen, setAuthOpen] = useState(() => Boolean(new URLSearchParams(window.location.search).get('invite')))
   const [showSplash, setShowSplash] = useState(() => {
     try {
@@ -393,7 +88,6 @@ function LandingPage({ token, mode, setMode, form, otpCode, setOtpCode, pendingV
     }
   })
   const [splashOpening, setSplashOpening] = useState(false)
-  const dialogRef = useRef(null)
   const previousFocusRef = useRef(null)
 
   useEffect(() => {
@@ -405,35 +99,6 @@ function LandingPage({ token, mode, setMode, form, otpCode, setOtpCode, pendingV
       window.clearTimeout(removeTimer)
     }
   }, [showSplash])
-
-  useEffect(() => {
-    if (!authOpen) return undefined
-    const previousOverflow = document.body.style.overflow
-    document.body.style.overflow = 'hidden'
-    const handleDialogKeydown = (event) => {
-      if (event.key === 'Escape') {
-        setAuthOpen(false)
-        return
-      }
-      if (event.key !== 'Tab' || !dialogRef.current) return
-      const focusable = dialogRef.current.querySelectorAll('button:not([disabled]), input:not([disabled]), [href], [tabindex]:not([tabindex="-1"])')
-      if (!focusable.length) return
-      const first = focusable[0]
-      const last = focusable[focusable.length - 1]
-      if (event.shiftKey && document.activeElement === first) {
-        event.preventDefault()
-        last.focus()
-      } else if (!event.shiftKey && document.activeElement === last) {
-        event.preventDefault()
-        first.focus()
-      }
-    }
-    document.addEventListener('keydown', handleDialogKeydown)
-    return () => {
-      document.body.style.overflow = previousOverflow
-      document.removeEventListener('keydown', handleDialogKeydown)
-    }
-  }, [authOpen])
 
   const openAuth = (nextMode) => {
     previousFocusRef.current = document.activeElement
@@ -551,52 +216,7 @@ function LandingPage({ token, mode, setMode, form, otpCode, setOtpCode, pendingV
         <p className="creator-credit">Designed &amp; developed by <strong>Shubham Shah</strong></p>
       </footer>
 
-      {authOpen && (
-        <div className="auth-modal-backdrop" onMouseDown={(event) => event.target === event.currentTarget && closeAuth()}>
-          <section className="auth-modal" role="dialog" aria-modal="true" aria-labelledby="auth-modal-title" ref={dialogRef}>
-            <button type="button" className="auth-modal-close" onClick={closeAuth} aria-label="Close sign-in dialog">×</button>
-            {mode !== 'otp' ? (
-              <>
-                <div className="auth-card-heading">
-                  <span className="auth-card-mark"><TeamoraMark /></span>
-                  <span className="eyebrow">Your workspace awaits</span>
-                  <h2 id="auth-modal-title">{mode === 'login' ? 'Welcome back.' : 'Start with clarity.'}</h2>
-                  <p>{mode === 'login' ? 'Sign in to pick up where your team left off.' : 'Create an account and bring your team together.'}</p>
-                </div>
-                <div className="auth-tabs" role="tablist" aria-label="Authentication">
-                  <button type="button" role="tab" aria-selected={mode === 'login'} className={mode === 'login' ? 'tab active' : 'tab'} onClick={() => setMode('login')}>Sign in</button>
-                  <button type="button" role="tab" aria-selected={mode === 'register'} className={mode === 'register' ? 'tab active' : 'tab'} onClick={() => setMode('register')}>Create account</button>
-                </div>
-              </>
-            ) : (
-              <div className="auth-card-heading otp-heading">
-                <button type="button" className="auth-back-button" onClick={() => setMode('register')}>← Back</button>
-                <span className="eyebrow">One last step</span>
-                <h2 id="auth-modal-title">Check your email.</h2>
-                <p>Enter the six-digit code we sent to verify your account.</p>
-              </div>
-            )}
-
-            {mode === 'otp' ? (
-              <form onSubmit={handleVerifyOtp} className="auth-form">
-                <label><span>Verification code</span><input type="text" inputMode="numeric" value={otpCode} onChange={(event) => setOtpCode(event.target.value.replace(/\D/g, '').slice(0, 6))} placeholder="123456" required autoFocus /></label>
-                {pendingVerification && <p className="otp-note">Code sent to {pendingVerification.email}</p>}
-                {status.message && <div className={`status ${status.type || 'neutral'}`} role="status" aria-live="polite">{status.message}</div>}
-                <button type="submit" className="primary-button submit-button">Verify OTP</button>
-                <button type="button" className="secondary-button submit-button" onClick={handleResendOtp}>Resend code</button>
-              </form>
-            ) : (
-              <form onSubmit={handleSubmit} className="auth-form">
-                {mode === 'register' && <label><span>Full name</span><input type="text" name="name" value={form.name} onChange={handleChange} placeholder="Your name" required autoFocus /></label>}
-                <label><span>Email</span><input type="email" name="email" value={form.email} onChange={handleChange} placeholder="hello@teamora.io" required autoFocus={mode === 'login'} /></label>
-                <label><span>Password</span><input type="password" name="password" value={form.password} onChange={handleChange} placeholder="••••••••" required /></label>
-                {status.message && <div className={`status ${status.type || 'neutral'}`} role="status" aria-live="polite">{status.message}</div>}
-                <button type="submit" className="primary-button submit-button">{mode === 'login' ? 'Sign in' : 'Create account'}</button>
-              </form>
-            )}
-          </section>
-        </div>
-      )}
+      <AuthModal open={authOpen} onClose={closeAuth} />
 
       {showSplash && <SplashScreen opening={splashOpening} />}
     </div>
@@ -675,7 +295,7 @@ function DashboardApp({ user, token, onLogout, onUserUpdate }) {
 
   useEffect(() => {
     let active = true
-    apiRequest('/teams/invitations/pending')
+    api.get('/teams/invitations/pending')
       .then((data) => {
         if (active) setPendingInvitations(data.invitations || [])
       })
@@ -710,7 +330,7 @@ function DashboardApp({ user, token, onLogout, onUserUpdate }) {
     setInvitationAction(invitationKey)
     setInvitationNotice('')
     try {
-      const data = await apiRequest(`/teams/${invitation.teamId}/invitations/${invitation.invitationId}/accept`, { method: 'POST' })
+      const data = await api.post(`/teams/${invitation.teamId}/invitations/${invitation.invitationId}/accept`)
       setPendingInvitations((current) => current.filter((item) => item.invitationId !== invitation.invitationId))
       setInvitationNotice(data.message || `You joined ${invitation.teamName}.`)
     } catch (error) {
@@ -784,7 +404,7 @@ function DashboardApp({ user, token, onLogout, onUserUpdate }) {
         <Routes>
           <Route path="/" element={<OverviewPage token={token} user={user} />} />
           <Route path="/teams" element={<TeamsPage token={token} user={user} />} />
-          <Route path="/chat" element={<TeamChat token={token} user={user} apiRequest={apiRequest} />} />
+          <Route path="/chat" element={<TeamChat token={token} user={user} api={api} />} />
           <Route path="/projects" element={<ProjectsPage token={token} user={user} />} />
           <Route path="/tasks" element={<TasksPage token={token} user={user} />} />
           <Route path="/settings" element={<SettingsPage user={user} onUserUpdate={onUserUpdate} onRequestLogout={() => setLogoutConfirmOpen(true)} theme={theme} onThemeChange={setTheme} />} />
@@ -815,13 +435,13 @@ function OverviewPage({ token, user }) {
   useEffect(() => {
     const loadOverview = async () => {
       try {
-        const data = await apiRequest('/teams')
+        const data = await api.get('/teams')
         const nextTeams = data.teams || []
         setTeams(nextTeams)
 
         const projectResults = await Promise.all(nextTeams.map(async (team) => {
           try {
-            const result = await apiRequest(`/team/get/projects/${team._id}`)
+            const result = await api.get(`/team/get/projects/${team._id}`)
             return (result.projects || []).map((project) => ({ ...project, teamName: team.name }))
           } catch {
             return []
@@ -830,7 +450,7 @@ function OverviewPage({ token, user }) {
         const projects = projectResults.flat()
         const taskResults = await Promise.all(projects.map(async (project) => {
           try {
-            const result = await apiRequest(`/team/get/tasks/${project._id}`)
+            const result = await api.get(`/team/get/tasks/${project._id}`)
             return (result.tasks || []).map((task) => ({
               ...task,
               projectName: project.name,
@@ -940,7 +560,7 @@ function TeamsPage({ token, user }) {
 
   const loadTeams = async () => {
     try {
-      const data = await apiRequest('/teams')
+      const data = await api.get('/teams')
       setTeams(data.teams || [])
     } catch (error) {
       setFormStatus(error)
@@ -958,15 +578,9 @@ function TeamsPage({ token, user }) {
     setBusy(true)
     try {
       if (modal === 'edit' && selectedTeam) {
-        await apiRequest(`/teams/${selectedTeam._id}`, {
-          method: 'PATCH',
-          body: JSON.stringify({ name, description }),
-        })
+        await api.patch(`/teams/${selectedTeam._id}`, { name, description })
       } else {
-        await apiRequest('/teams', {
-          method: 'POST',
-          body: JSON.stringify({ name, description }),
-        })
+        await api.post('/teams', { name, description })
       }
       setName('')
       setDescription('')
@@ -993,7 +607,7 @@ function TeamsPage({ token, user }) {
     if (!selectedTeam) return
     setBusy(true)
     try {
-      await apiRequest(`/teams/${selectedTeam._id}`, { method: 'DELETE' })
+      await api.delete(`/teams/${selectedTeam._id}`)
       setTeams((current) => current.filter((team) => team._id !== selectedTeam._id))
       setFormStatus(`“${selectedTeam.name}” was deleted.`)
       setSelectedTeam(null)
@@ -1012,7 +626,7 @@ function TeamsPage({ token, user }) {
     setFormStatus('')
     setModal('details')
     try {
-      const data = await apiRequest(`/team/get/projects/${team._id}`)
+      const data = await api.get(`/team/get/projects/${team._id}`)
       setTeamProjects(data.projects || [])
     } catch {
       setTeamProjects([])
@@ -1025,10 +639,7 @@ function TeamsPage({ token, user }) {
     setBusy(true)
     setFormStatus('')
     try {
-      const data = await apiRequest(`/teams/${selectedTeam._id}/members`, {
-        method: 'POST',
-        body: JSON.stringify({ email: memberEmail.trim(), role: memberRole }),
-      })
+      const data = await api.post(`/teams/${selectedTeam._id}/members`, { email: memberEmail.trim(), role: memberRole })
       setSelectedTeam(data.team)
       setTeams((current) => current.map((team) => team._id === data.team._id ? data.team : team))
       setMemberEmail('')
@@ -1046,10 +657,7 @@ function TeamsPage({ token, user }) {
     setBusy(true)
     setFormStatus('')
     try {
-      const data = await apiRequest(`/teams/${selectedTeam._id}/members/${member.user._id}/role`, {
-        method: 'PATCH',
-        body: JSON.stringify({ role }),
-      })
+      const data = await api.patch(`/teams/${selectedTeam._id}/members/${member.user._id}/role`, { role })
       setSelectedTeam(data.team)
       setTeams((current) => current.map((team) => team._id === data.team._id ? data.team : team))
       setFormStatus('Member role updated.')
@@ -1065,7 +673,7 @@ function TeamsPage({ token, user }) {
     setBusy(true)
     try {
       const memberIdentifier = memberToRemove.user?._id || memberToRemove._id
-      const data = await apiRequest(`/teams/${selectedTeam._id}/members/${memberIdentifier}`, { method: 'DELETE' })
+      const data = await api.delete(`/teams/${selectedTeam._id}/members/${memberIdentifier}`)
       setSelectedTeam(data.team)
       setTeams((current) => current.map((team) => team._id === data.team._id ? data.team : team))
       setFormStatus(`${memberToRemove.user?.name || memberToRemove.email} was removed from the team.`)
@@ -1254,7 +862,7 @@ function ProjectsPage({ token, user }) {
   useEffect(() => {
     const loadTeams = async () => {
       try {
-        const data = await apiRequest('/teams')
+        const data = await api.get('/teams')
         const nextTeams = data.teams || []
         setTeams(nextTeams)
         if (nextTeams[0] && !selectedTeamId) setSelectedTeamId(nextTeams[0]._id)
@@ -1272,7 +880,7 @@ function ProjectsPage({ token, user }) {
     if (!selectedTeamId) return
     const loadProjects = async () => {
       try {
-        const data = await apiRequest(`/team/get/projects/${selectedTeamId}`)
+        const data = await api.get(`/team/get/projects/${selectedTeamId}`)
         setProjects(data.projects || [])
       } catch (error) {
         setProjects([])
@@ -1292,10 +900,9 @@ function ProjectsPage({ token, user }) {
     setBusy(true)
     try {
       const isEditing = modal === 'edit' && selectedProject
-      await apiRequest(isEditing ? `/team/update/project/${selectedProject._id}` : `/team/create/project/${selectedTeamId}`, {
-        method: isEditing ? 'PATCH' : 'POST',
-        body: JSON.stringify({ name, description, Team: selectedTeamId, duesTime: dueDate, status }),
-      })
+      const projectPayload = { name, description, Team: selectedTeamId, duesTime: dueDate, status }
+      if (isEditing) await api.patch(`/team/update/project/${selectedProject._id}`, projectPayload)
+      else await api.post(`/team/create/project/${selectedTeamId}`, projectPayload)
       setName('')
       setDescription('')
       setDueDate('')
@@ -1304,7 +911,7 @@ function ProjectsPage({ token, user }) {
       setModal(null)
       setMessage(isEditing ? 'Project updated successfully.' : 'Project created successfully.')
 
-      const data = await apiRequest(`/team/get/projects/${selectedTeamId}`)
+      const data = await api.get(`/team/get/projects/${selectedTeamId}`)
       setProjects(data.projects || [])
     } catch (error) {
       setMessage(error)
@@ -1327,7 +934,7 @@ function ProjectsPage({ token, user }) {
     if (!selectedProject) return
     setBusy(true)
     try {
-      await apiRequest(`/team/delete/project/${selectedProject._id}`, { method: 'DELETE' })
+      await api.delete(`/team/delete/project/${selectedProject._id}`)
       setProjects((current) => current.filter((project) => project._id !== selectedProject._id))
       setMessage(`“${selectedProject.name}” was deleted.`)
       setSelectedProject(null)
@@ -1430,13 +1037,13 @@ function TasksPage({ token, user }) {
   useEffect(() => {
     const loadProjects = async () => {
       try {
-        const teamsData = await apiRequest('/teams')
+        const teamsData = await api.get('/teams')
         const teamList = teamsData.teams || []
         const projectList = []
 
         for (const team of teamList) {
           try {
-            const projectData = await apiRequest(`/team/get/projects/${team._id}`)
+            const projectData = await api.get(`/team/get/projects/${team._id}`)
             projectList.push(...(projectData.projects || []).map((project) => ({
               ...project,
               teamName: team.name,
@@ -1491,7 +1098,7 @@ function TasksPage({ token, user }) {
     if (!selectedProjectId) return
     const loadTasks = async () => {
       try {
-        const data = await apiRequest(`/team/get/tasks/${selectedProjectId}`)
+        const data = await api.get(`/team/get/tasks/${selectedProjectId}`)
         setTasks(data.tasks || [])
       } catch (error) {
         setTasks([])
@@ -1525,16 +1132,14 @@ function TasksPage({ token, user }) {
           members: form.members.filter(Boolean),
           dueDate: form.dueDate,
         }
-      await apiRequest(isEditing ? `/team/update/task/${selectedTask._id}` : '/team/create/task', {
-        method: isEditing ? 'PATCH' : 'POST',
-        body: JSON.stringify(payload),
-      })
+      if (isEditing) await api.patch(`/team/update/task/${selectedTask._id}`, payload)
+      else await api.post('/team/create/task', payload)
       setForm({ title: '', description: '', status: 'pending', dueDate: '', members: [] })
       setMessage(isEditing ? 'Task updated successfully.' : 'Task created successfully.')
       setSelectedTask(null)
       setModal(null)
       try {
-        const data = await apiRequest(`/team/get/tasks/${selectedProjectId}`)
+        const data = await api.get(`/team/get/tasks/${selectedProjectId}`)
         setTasks(data.tasks || [])
       } catch {
         setMessage('Task saved. Refresh the page if the task list does not update.')
@@ -1574,7 +1179,7 @@ function TasksPage({ token, user }) {
     if (!selectedTask) return
     setBusy(true)
     try {
-      await apiRequest(`/team/delete/task/${selectedTask._id}`, { method: 'DELETE' })
+      await api.delete(`/team/delete/task/${selectedTask._id}`)
       setTasks((current) => current.filter((task) => task._id !== selectedTask._id))
       setMessage(`“${selectedTask.title}” was deleted.`)
       setSelectedTask(null)
@@ -1733,10 +1338,7 @@ function SettingsPage({ user, onUserUpdate, onRequestLogout, theme, onThemeChang
     setSaving(true)
     setFeedback({ type: '', message: '' })
     try {
-      const data = await apiRequest('/auth/account', {
-        method: 'PATCH',
-        body: JSON.stringify(payload),
-      })
+      const data = await api.patch('/auth/account', payload)
       onUserUpdate(data.user)
       setCurrentPassword('')
       setNewPassword('')

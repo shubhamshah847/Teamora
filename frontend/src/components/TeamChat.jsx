@@ -3,7 +3,7 @@ import { io } from 'socket.io-client'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { AiTwotoneDelete } from "react-icons/ai";
 import axios from 'axios'
-const SERVER_URI = import.meta.env.VITE_API_URL || "https://teamora-aq9u.onrender.com"
+const SERVER_URI = import.meta.env.VITE_API_URL || "http://localhost:3001"
 const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || SERVER_URI
 
 // Merge two message lists, remove duplicates by _id, keep oldest -> newest
@@ -15,7 +15,7 @@ const mergeMessages = (a = [], b = []) => {
   )
 }
 
-function useTeamChat({ token, teams, selectedTeamId, user, apiRequest }) {
+function useTeamChat({ token, teams, selectedTeamId, user, api }) {
   const socketRef = useRef(null)
   const selectedTeamIdRef = useRef(selectedTeamId)
   const teamsRef = useRef(teams)
@@ -52,7 +52,7 @@ function useTeamChat({ token, teams, selectedTeamId, user, apiRequest }) {
   const refreshMessages = useCallback(async (teamId = selectedTeamId) => {
     if (!teamId) return
     try {
-      const data = await apiRequest(`/chat/teams/${teamId}/messages?limit=30`)
+      const data = await api.get(`/chat/teams/${teamId}/messages?limit=30`)
       setMessagesByTeam((current) => ({
         ...current,
         [teamId]: data.messages || [],
@@ -61,7 +61,7 @@ function useTeamChat({ token, teams, selectedTeamId, user, apiRequest }) {
     } catch (requestError) {
       setError(requestError.message || String(requestError))
     }
-  }, [selectedTeamId, apiRequest])
+  }, [selectedTeamId, api])
 
   useEffect(() => {
     if (!token) return
@@ -120,10 +120,7 @@ function useTeamChat({ token, teams, selectedTeamId, user, apiRequest }) {
       const text = (content || '').trim()
       if (!text || !selectedTeamId) return false
       try {
-        const message = await apiRequest(`/chat/teams/${selectedTeamId}/messages`, {
-          method: 'POST',
-          body: JSON.stringify({ content: text }),
-        })
+        const message = await api.post(`/chat/teams/${selectedTeamId}/messages`, { content: text })
         addMessage(message)
         setError('')
         return true
@@ -132,7 +129,7 @@ function useTeamChat({ token, teams, selectedTeamId, user, apiRequest }) {
         return false
       }
     },
-    [selectedTeamId, apiRequest, addMessage]
+    [selectedTeamId, api, addMessage]
   )
 
   const messages = useMemo(
@@ -160,8 +157,8 @@ export default function TeamChat({ token, user }) {
 
 
   // Keep chat requests on the deployed backend in production.
-  const apiRequest = useCallback(
-    async (path, options = {}) => {
+  const api = useMemo(() => {
+    const request = async (path, options = {}) => {
       const res = await fetch(`${SERVER_URI}${path}`, {
         ...options,
         headers: {
@@ -173,9 +170,13 @@ export default function TeamChat({ token, user }) {
       const data = await res.json().catch(() => ({}))
       if (!res.ok) throw new Error(data.message || 'Request failed')
       return data
-    },
-    [token]
-  )
+    }
+
+    return {
+      get: (path) => request(path),
+      post: (path, body) => request(path, { method: 'POST', body: JSON.stringify(body) }),
+    }
+  }, [token])
   const [showMessage, setShowMessage] = useState(false);
   const handleDelete = () => {
     setShowMessage(true);
@@ -222,12 +223,12 @@ export default function TeamChat({ token, user }) {
     refreshMessages,
     connected,
     error: chatError,
-  } = useTeamChat({ token, teams, selectedTeamId, user, apiRequest })
+  } = useTeamChat({ token, teams, selectedTeamId, user, api })
 
   // Load the user's teams
   useEffect(() => {
     let active = true
-    apiRequest('/teams')
+    api.get('/teams')
       .then((data) => {
         if (!active) return
         const nextTeams = data.teams || []
@@ -243,7 +244,7 @@ export default function TeamChat({ token, user }) {
     return () => {
       active = false
     }
-  }, [apiRequest])
+  }, [api])
 
   // Scroll to the newest message
   useEffect(() => {

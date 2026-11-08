@@ -8,7 +8,8 @@ let io;
 function initializeSocket(server) {
   io = new Server(server, {
     cors: {
-      origin: "https://teamora-web.vercel.app",
+      origin: process.env.CLIENT_URL || "http://localhost:5173",
+      credentials: true,
       methods: ["GET", "POST"],
     },
   });
