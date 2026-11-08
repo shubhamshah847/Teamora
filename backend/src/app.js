@@ -16,7 +16,7 @@ const app = express()
 
 
 app.use(cors({
-  origin: "https://teamora-aq9u.onrender.com",
+  origin: "https://teamora-web.vercel.app",
   credentials: true,
   methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
   allowedHeaders: ["Content-Type", "Authorization"]
