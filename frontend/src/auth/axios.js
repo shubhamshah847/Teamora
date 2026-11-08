@@ -7,7 +7,7 @@ export const setAccessToken = (token) => {
 };
 
 const api = axios.create({
-  baseURL: "http://localhost:3001",
+  baseURL: "https://teamora-aq9u.onrender.com",
   withCredentials: true
 });
 
@@ -33,7 +33,7 @@ api.interceptors.response.use(
       try {
         // Get a new access token using the refresh token cookie
         const response = await axios.post(
-          "http://localhost:3001/auth/refresh-access-token",
+          "https://teamora-aq9u.onrender.com/auth/refresh-access-token",
           {},
           { withCredentials: true }
         );
@@ -60,7 +60,7 @@ api.interceptors.response.use(
 export const initializeAuth = async () => {
   try {
     const response = await axios.post(
-      "http://localhost:3001/auth/refresh-access-token",
+      "https://teamora-aq9u.onrender.com/auth/refresh-access-token",
       {},
       { withCredentials: true }
     );
