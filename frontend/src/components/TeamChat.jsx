@@ -3,8 +3,8 @@ import { io } from 'socket.io-client'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { AiTwotoneDelete } from "react-icons/ai";
 import axios from 'axios'
-const SERVER_URI = import.meta.env.VITE_API_URL || "https://teamora-aq9u.onrender.com"
-const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || SERVER_URI
+const SERVER_URI = import.meta.env.VITE_SERVER_URI
+const SOCKET_URL = import.meta.env.VITE_SERVER_URI
 
 // Merge two message lists, remove duplicates by _id, keep oldest -> newest
 const mergeMessages = (a = [], b = []) => {

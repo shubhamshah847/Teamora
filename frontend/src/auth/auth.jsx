@@ -2,7 +2,7 @@ import { createContext, useContext, useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { TeamoraMark } from '../components/TeamoraLogo.jsx'
 import api, { initializeAuth, setAccessToken } from './axios.js'
-export const SERVER_URI = 'https://teamora-aq9u.onrender.com'
+export const SERVER_URI = import.meta.env.VITE_SERVER_URI
 const AuthContext = createContext(null)
 
 // export const getStoredToken = () => localStorage.getItem('Teamora-token')
