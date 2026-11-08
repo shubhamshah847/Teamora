@@ -7,6 +7,13 @@ import { redis } from "../app.js";
 import generateOtp from "../utils/otp.js";
 import { sendOtp, regrestationEmail } from "../services/email.service.js";
 
+const refreshCookieOptions = {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+    maxAge: 15 * 24 * 60 * 60 * 1000,
+};
+
 export const registerController = async (req, res) => {
     const { name, email, password, googleId } = req.body;
 
@@ -89,10 +96,7 @@ export const loginController = async (req, res) => {
         const accessToken = jwt.sign({ id: isExist._id }, process.env.JWT_WEB_TOKEN, { expiresIn: '15m' });
 
         res.cookie('token', refreshToken, {
-            httpOnly: true,
-            secure: false,
-            sameSite: 'lax',
-            maxAge: 15 * 24 * 60 * 60 * 1000,
+            ...refreshCookieOptions,
         });
 
         return res.status(200).json({
@@ -157,10 +161,7 @@ export const otpVerify = async (req, res) => {
         const refreshToken = jwt.sign({ id: user._id }, process.env.JWT_WEB_TOKEN, { expiresIn: '15d' });
         const accessToken = jwt.sign({ id: user._id }, process.env.JWT_WEB_TOKEN, { expiresIn: '15m' });
         res.cookie('token', refreshToken, {
-            httpOnly: true,
-            secure: false,
-            sameSite: 'lax',
-            maxAge: 15 * 24 * 60 * 60 * 1000,
+            ...refreshCookieOptions,
         });
 
         return res.status(200).json({
@@ -236,10 +237,7 @@ export const registerGoogleController = async (req, res) => {
         });
         const token = jwt.sign({ id: user._id }, process.env.JWT_WEB_TOKEN, { expiresIn: '15d' });
         res.cookie('token', token, {
-            httpOnly: true,
-            secure: false,
-            sameSite: 'lax',
-            maxAge: 15 * 24 * 60 * 60 * 1000,
+            ...refreshCookieOptions,
         });
 
         await regrestationEmail(user.email, user.name);
@@ -305,7 +303,7 @@ export const updateAccountSettings = async (req, res) => {
 
 export const userLogout = async (req, res) => {
     try {
-        res.clearCookie('token');
+        res.clearCookie('token', refreshCookieOptions);
         return res.status(200).json({ message: "Logout successfully" });
     } catch (err) {
         return res.status(500).json({ message: "Logout failed" });
@@ -321,27 +319,20 @@ export const refreshAccessToken = async (req, res) => {
 
         const user = await userModel.findById(decoded.id).select("_id isVerified");
         if (!user || !user.isVerified) {
-            res.clearCookie("token", { httpOnly: true, secure: false, sameSite: "lax" });
+            res.clearCookie("token", refreshCookieOptions);
             return res.status(401).json({ message: "Refresh token is no longer valid. Please log in again." });
         }
-        const baseConfig= {httpOnly:true , secure:true,sameSite:"lax"}
-
         const accessToken = jwt.sign({ id: user._id }, process.env.JWT_WEB_TOKEN, { expiresIn: "15m" });
         console.log("new access token",accessToken)
         const newRefreshToken = jwt.sign({ id: user._id }, process.env.JWT_WEB_TOKEN, { expiresIn: "15d" });
         console.log("new refresh token",newRefreshToken)
-        res.clearCookie("token", { ...baseConfig });
-        res.cookie("token", newRefreshToken, {
-            httpOnly: true,
-            secure: false,
-            sameSite: "lax",
-            maxAge: 15 * 24 * 60 * 60 * 1000,
-        });
+        res.clearCookie("token", refreshCookieOptions);
+        res.cookie("token", newRefreshToken, refreshCookieOptions);
 
         return res.status(200).json({ message: "Access token refreshed", accessToken });
     } catch (error) {
         console.error("Refresh token failed:", error);
-        res.clearCookie("token", { httpOnly: true, secure: false, sameSite: "lax" });
+        res.clearCookie("token", refreshCookieOptions);
         return res.status(401).json({ message: "Refresh token expired or invalid. Please log in again." });
     }
 };
