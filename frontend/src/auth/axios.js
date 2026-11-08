@@ -33,7 +33,7 @@ api.interceptors.response.use(
       try {
         // Get a new access token using the refresh token cookie
         const response = await axios.post(
-          "https://teamora-aq9u.onrender.com/auth/refresh-access-token",
+          "https://teamora-aq9u.onrender.comauth/refresh-access-token",
           {},
           { withCredentials: true }
         );
@@ -60,7 +60,7 @@ api.interceptors.response.use(
 export const initializeAuth = async () => {
   try {
     const response = await axios.post(
-      "https://teamora-aq9u.onrender.com/auth/refresh-access-token",
+      "https://teamora-aq9u.onrender.comauth/refresh-access-token",
       {},
       { withCredentials: true }
     );
