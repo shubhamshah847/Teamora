@@ -5591,3 +5591,465 @@
     width: 100%;
   }
 }
+
+/* Mobile-first workspace and landing refinements */
+@media (max-width: 760px) {
+  .dashboard-shell {
+    min-height: 100dvh;
+  }
+
+  .dashboard-shell .sidebar {
+    position: fixed;
+    z-index: 80;
+    inset: 0 0 auto;
+    display: block;
+    width: 100%;
+    height: 66px;
+    padding: 0 16px;
+    border-right: 0;
+    border-bottom: 1px solid rgba(193, 185, 255, 0.18);
+    box-shadow: 0 8px 24px rgba(20, 23, 42, 0.12);
+  }
+
+  .dashboard-shell .sidebar-brand {
+    height: 66px;
+    padding: 0 56px 0 0;
+  }
+
+  .dashboard-shell .sidebar-nav {
+    position: fixed;
+    z-index: 90;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 2px;
+    overflow: visible;
+    padding: 7px 8px calc(7px + env(safe-area-inset-bottom));
+    border-top: 1px solid #e8eaf2;
+    background: rgba(255, 255, 255, 0.97);
+    box-shadow: 0 -8px 28px rgba(35, 42, 72, 0.09);
+    backdrop-filter: blur(16px);
+  }
+
+  .dashboard-shell .sidebar-section-label,
+  .dashboard-shell .sidebar-nav-arrow {
+    display: none;
+  }
+
+  .dashboard-shell .sidebar-nav a {
+    display: flex;
+    min-width: 0;
+    min-height: 56px;
+    flex-direction: column;
+    justify-content: center;
+    gap: 4px;
+    padding: 5px 2px;
+    border: 0;
+    border-radius: 12px;
+    color: #788096;
+    font-size: clamp(0.55rem, 2.4vw, 0.67rem);
+    font-weight: 700;
+    line-height: 1;
+    white-space: nowrap;
+  }
+
+  .dashboard-shell .sidebar-nav a.active {
+    background: #f0efff;
+    box-shadow: none;
+    color: #4f46e5;
+  }
+
+  .dashboard-shell .sidebar-nav-icon {
+    width: 19px;
+    height: 19px;
+  }
+
+  .dashboard-shell .user-panel {
+    position: absolute;
+    top: 14px;
+    right: 15px;
+    width: auto;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: transparent;
+  }
+
+  .dashboard-shell .sidebar-user-avatar,
+  .dashboard-shell .sidebar-user-info {
+    display: none;
+  }
+
+  .dashboard-shell .sidebar .logout-button {
+    width: 38px;
+    height: 38px;
+    border-color: rgba(193, 185, 255, 0.2);
+    background: rgba(255, 255, 255, 0.08);
+  }
+
+  .dashboard-shell .sidebar .logout-button span {
+    display: none;
+  }
+
+  .workspace-main,
+  .workspace-main:has(.feedback-toast) {
+    width: 100%;
+    min-width: 0;
+    padding: 88px 20px calc(96px + env(safe-area-inset-bottom));
+  }
+
+  .page-panel,
+  .page-panel > *,
+  .content-grid,
+  .summary-grid,
+  .dashboard-grid {
+    min-width: 0;
+  }
+
+  .page-panel {
+    gap: 18px;
+  }
+
+  .page-header {
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .page-header h2 {
+    font-size: clamp(1.75rem, 8vw, 2.35rem);
+  }
+
+  .page-subtitle {
+    max-width: 38ch;
+    font-size: 0.88rem;
+    line-height: 1.55;
+  }
+
+  .summary-grid,
+  .dashboard-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+
+  .metric-card,
+  .panel-card {
+    padding: 17px;
+    border-radius: 17px;
+  }
+
+  .metric-card strong {
+    font-size: clamp(1.55rem, 7vw, 2rem);
+  }
+
+  .feedback-toast {
+    top: 76px;
+    right: 14px;
+    width: min(390px, calc(100vw - 28px));
+  }
+
+  .Teamora-shell :is(.topbar, .hero, .features, .process, .footer) {
+    width: calc(100% - 32px);
+  }
+
+  .Teamora-shell .topbar {
+    min-height: 62px;
+    gap: 10px;
+    padding: 10px 0;
+  }
+
+  .Teamora-shell .topbar > .flex {
+    gap: 7px;
+  }
+
+  .Teamora-shell .brand-mark {
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+  }
+
+  .Teamora-shell .brand-name {
+    font-size: 1.04rem;
+  }
+
+  .Teamora-shell .nav-button {
+    min-height: 37px;
+    padding: 0.55rem 0.76rem;
+    font-size: 0.73rem;
+  }
+
+  .Teamora-shell .hero {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 28px;
+    padding-top: 36px;
+    padding-bottom: 48px;
+  }
+
+  .Teamora-shell .hero-copy h1 {
+    max-width: 12ch;
+    margin: 17px 0 14px;
+    font-size: clamp(2.7rem, 11vw, 4.1rem);
+    line-height: 0.99;
+  }
+
+  .Teamora-shell .hero-copy > p {
+    max-width: 40ch;
+    font-size: 0.96rem;
+    line-height: 1.65;
+  }
+
+  .Teamora-shell .hero-actions {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 9px;
+    margin-top: 22px;
+  }
+
+  .Teamora-shell .hero-actions button {
+    min-height: 47px;
+    flex: 1 1 155px;
+    justify-content: center;
+    padding: 0.8rem 0.9rem;
+    font-size: 0.8rem;
+  }
+
+  .Teamora-shell .stats-row {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+    margin-top: 24px;
+  }
+
+  .Teamora-shell .stat-block,
+  .Teamora-shell .stat-block + .stat-block {
+    min-width: 0;
+    align-items: flex-start;
+    gap: 5px;
+    padding: 12px 10px;
+    border: 1px solid #e5e7ef;
+    border-radius: 12px;
+    background: #fff;
+  }
+
+  .Teamora-shell .stat-block strong {
+    font-size: 0.77rem;
+  }
+
+  .Teamora-shell .stat-block .stat-index {
+    font-size: 0.64rem;
+  }
+
+  .Teamora-shell .product-preview {
+    width: 100%;
+    padding: 11px;
+    border-radius: 14px;
+  }
+
+  .Teamora-shell .preview-board-columns {
+    grid-template-columns: repeat(3, minmax(112px, 1fr));
+    gap: 8px;
+    overflow-x: auto;
+    padding-bottom: 5px;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: thin;
+  }
+
+  .Teamora-shell .preview-column {
+    min-width: 0;
+    scroll-snap-align: start;
+  }
+
+  .Teamora-shell .preview-column h3 {
+    font-size: 0.68rem;
+  }
+
+  .Teamora-shell .preview-task {
+    min-height: 92px;
+    padding: 9px 8px;
+  }
+
+  .Teamora-shell .preview-task strong {
+    font-size: 0.66rem;
+    line-height: 1.35;
+  }
+
+  .Teamora-shell .preview-task-tag {
+    font-size: 0.56rem;
+  }
+
+  .Teamora-shell .preview-activity {
+    gap: 7px;
+    font-size: 0.62rem;
+  }
+
+  .Teamora-shell .features,
+  .Teamora-shell .process {
+    padding-top: 48px;
+  }
+
+  .Teamora-shell .section-header h2 {
+    font-size: clamp(1.8rem, 8vw, 2.45rem);
+  }
+
+  .Teamora-shell .feature-grid,
+  .Teamora-shell .steps-row {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .Teamora-shell .feature-card,
+  .Teamora-shell .step-card {
+    padding: 19px;
+    border-radius: 15px;
+  }
+
+  .Teamora-shell .footer {
+    padding-bottom: 32px;
+    font-size: 0.78rem;
+    line-height: 1.5;
+  }
+
+  .auth-modal-backdrop {
+    align-items: flex-end;
+    padding: 10px;
+  }
+
+  .auth-modal {
+    width: min(100%, 480px);
+    max-height: calc(100dvh - 20px);
+    overflow-y: auto;
+    padding: 26px 21px calc(21px + env(safe-area-inset-bottom));
+    border-radius: 20px 20px 14px 14px;
+  }
+}
+
+@media (max-width: 620px) {
+  .chat-page-heading {
+    align-items: flex-start;
+    flex-direction: row;
+    justify-content: space-between;
+  }
+
+  .chat-heading-badge {
+    flex: 0 0 auto;
+    margin-top: 5px;
+  }
+
+  .team-chat-layout {
+    height: max(410px, calc(100dvh - 390px));
+    min-height: 410px;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr);
+    border-radius: 18px;
+  }
+
+  .chat-team-sidebar {
+    max-height: 154px;
+    padding: 10px 11px 9px;
+    border-right: 0;
+    border-bottom: 1px solid #ece9f6;
+  }
+
+  .chat-sidebar-heading {
+    padding: 0 2px;
+  }
+
+  .chat-sidebar-heading h3 {
+    margin-top: 2px;
+    font-size: 0.9rem;
+  }
+
+  .chat-search-box {
+    height: 34px;
+    margin: 8px 0;
+  }
+
+  .chat-team-list {
+    display: flex;
+    max-height: none;
+    min-height: 54px;
+    gap: 8px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding-bottom: 2px;
+    scrollbar-width: thin;
+  }
+
+  .chat-team-item {
+    width: 190px;
+    min-width: 190px;
+    min-height: 52px;
+    flex: 0 0 190px;
+    padding: 8px;
+    border-radius: 12px;
+  }
+
+  .chat-team-item.active {
+    box-shadow: inset 0 0 0 1px #bcb4ff;
+  }
+
+  .chat-conversation {
+    min-height: 0;
+  }
+
+  .chat-conversation-header {
+    min-height: 60px;
+    padding: 9px 12px;
+  }
+
+  .chat-message-area {
+    padding: 13px 10px;
+  }
+
+  .chat-composer {
+    margin: 8px 9px 10px;
+  }
+
+  .chat-storage-note {
+    margin: 0 10px 8px;
+  }
+}
+
+@media (max-width: 420px) {
+  .workspace-main,
+  .workspace-main:has(.feedback-toast) {
+    padding-right: 14px;
+    padding-left: 14px;
+  }
+
+  .dashboard-shell .sidebar {
+    padding-right: 12px;
+    padding-left: 12px;
+  }
+
+  .dashboard-shell .sidebar-nav {
+    padding-right: 4px;
+    padding-left: 4px;
+  }
+
+  .dashboard-shell .sidebar-nav a {
+    font-size: 0.54rem;
+  }
+
+  .Teamora-shell :is(.topbar, .hero, .features, .process, .footer) {
+    width: calc(100% - 28px);
+  }
+
+  .Teamora-shell .hero-actions button {
+    flex-basis: 100%;
+  }
+
+  .Teamora-shell .stat-block,
+  .Teamora-shell .stat-block + .stat-block {
+    padding: 10px 8px;
+  }
+
+  .Teamora-shell .stat-block strong {
+    font-size: 0.7rem;
+  }
+
+  .auth-modal .auth-card-heading h2 {
+    font-size: 1.8rem;
+  }
+}

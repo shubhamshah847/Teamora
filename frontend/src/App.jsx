@@ -13,8 +13,6 @@ import './App.css'
 
 
 
-
-
 const featureCards = [
   {
     title: 'Flow orchestration',
@@ -126,27 +124,27 @@ function LandingPage({ token, user }) {
 
   return (
     <div className="Teamora-shell">
-     <header className="topbar flex items-center justify-between">
-  <TeamoraLogo />
+      <header className="topbar flex items-center justify-between">
+        <TeamoraLogo />
 
-  <div className="flex items-center gap-3">
-    <button
-      onClick={() =>
-        window.open(
-          "https://docs.google.com/forms/d/e/1FAIpQLSdaBY48jxR9bjHdySLWvhDKnN6KlFx0Yz8mrVRuB0qCLv3xTw/viewform",
-          "_blank"
-        )
-      }
-      className="nav-button"
-    >
-      Feedback
-    </button>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() =>
+              window.open(
+                "https://docs.google.com/forms/d/e/1FAIpQLSdaBY48jxR9bjHdySLWvhDKnN6KlFx0Yz8mrVRuB0qCLv3xTw/viewform",
+                "_blank"
+              )
+            }
+            className="nav-button"
+          >
+            Feedback
+          </button>
 
-    <button className="nav-button" type="button" onClick={goToWorkspace}>
-      {token ? 'Open workspace' : 'Sign in'}
-    </button>
-  </div>
-</header>
+          <button className="nav-button" type="button" onClick={goToWorkspace}>
+            {token ? 'Open workspace' : 'Sign in'}
+          </button>
+        </div>
+      </header>
 
       <main>
         <section className="hero">
@@ -853,6 +851,7 @@ function ProjectsPage({ token, user }) {
   const [selectedProject, setSelectedProject] = useState(null)
   const [loading, setLoading] = useState(true)
   const [busy, setBusy] = useState(false)
+
   const selectedTeam = teams.find((team) => team._id === selectedTeamId)
   const canManageSelectedTeam = Boolean(selectedTeam && (
     selectedTeam.owner?._id === user?._id
@@ -968,7 +967,9 @@ function ProjectsPage({ token, user }) {
 
       <FeedbackToast message={message} />
       {teams.length === 0 && !loading ? (
-        <div className="panel-card team-empty-state"><div className="team-empty-icon">P</div><h3>Create a team first</h3><p>Projects belong to a team. Create a team before adding a project.</p></div>
+        <div className="panel-card team-empty-state"><div className="team-empty-icon">P</div><h3>Create a team first</h3><p>Projects belong to a team. Create a team before adding a project.</p>
+         <NavLink className="primary-button" to="/dashboard/teams">Go to Team</NavLink>
+        </div>
       ) : loading ? (
         <div className="panel-card team-empty-state">Loading projects...</div>
       ) : projects.length === 0 ? (
